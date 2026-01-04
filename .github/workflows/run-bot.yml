@@ -1,37 +1,53 @@
-name: Minecraft Keep-Alive Bot
+name: Minecraft Keep-Alive Bot 24/7
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # Manual trigger
   schedule:
-    - cron: '0 */5 * * *'  # Every 5 hours (safety margin)
+    - cron: '0 */5 * * *'  # Runs every 5 hours (keeps under 6-hour limit)
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 295  # 4 hours 55 min (under 5-hour limit)
+    timeout-minutes: 295  # 4 hours 55 minutes (safety margin)
     
     steps:
-    - name: Checkout
+    - name: Checkout repository
       uses: actions/checkout@v3
       
-    - name: Setup Node
+    - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '18'
+        cache: 'npm'
         
     - name: Install dependencies
-      run: npm install mineflayer
+      run: npm install
       
-    - name: Run Bot
+    - name: Run Minecraft Keep-Alive Bot
       run: |
-        echo "🚀 Starting Minecraft Keep-Alive Bot"
-        echo "⏰ Will run for 4 hours 55 minutes"
-        echo "📍 Server: aglaea.mcserverhost.com"
+        echo "==========================================="
+        echo "🚀 STARTING MINECRAFT KEEP-ALIVE BOT"
+        echo "==========================================="
+        echo "📍 Server: aglaea.mcserverhost.com:10534"
+        echo "👤 Bot name: KeepAliveBot"
+        echo "⏰ Session duration: 4 hours 55 minutes"
+        echo "🔄 Next session: 5 minutes after this ends"
         echo "🤖 Bot will:"
-        echo "   1. Join server immediately"
+        echo "   1. Connect to server on port 10534"
         echo "   2. Auto-reconnect if disconnected"
-        echo "   3. Make anti-AFK movements"
-        echo "   4. Keep server active"
+        echo "   3. Perform anti-AFK movements"
+        echo "   4. Keep server active 24/7"
+        echo "==========================================="
         
-        # Run bot with timeout matching workflow
-        timeout 294m node index.js || echo "⏰ Time complete - next run in 5 minutes"
+        # Start both bot and keep-alive server
+        echo "Starting keep-alive server..."
+        node keep_alive.js &
+        
+        echo "Starting Minecraft bot..."
+        # Run bot for 4h 54m (leaving 1 minute buffer)
+        timeout 294m node index.js
+        
+        echo "==========================================="
+        echo "⏰ Session complete. Next run in ~5 minutes"
+        echo "✅ Server was kept active for 4h 55m"
+        echo "==========================================="
