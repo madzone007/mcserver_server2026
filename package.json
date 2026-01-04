@@ -4,10 +4,15 @@
   "description": "A 24/7 Minecraft Java Bot",
   "main": "index.js",
   "scripts": {
-    "start": "node keep_alive.js & node index.js"
+    "start": "node keep_alive.js & node index.js",
+    "bot": "node index.js",
+    "keep-alive": "node keep_alive.js"
   },
   "dependencies": {
     "express": "^4.21.2",
     "mineflayer": "^4.15.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
