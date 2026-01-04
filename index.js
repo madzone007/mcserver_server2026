@@ -1,100 +1,82 @@
 const mineflayer = require('mineflayer');
 
 let bot = null;
-let connectionAttempts = 0;
 let antiAFKInterval = null;
-let isServerStarting = false;
 
-function createBot() {
-  connectionAttempts++;
-  console.log(`🔗 Connection attempt #${connectionAttempts} - This will AUTO-START the server!`);
+// Server config - USE YOUR INFO
+const config = {
+  host: 'aglaea.mcserverhost.com',
+  port: 25565,
+  username: 'KeepAliveBot',
+  version: '1.21',
+  auth: 'offline'
+};
+
+console.log('===========================================');
+console.log('🤖 MINECRAFT KEEP-ALIVE BOT');
+console.log('📍 Target:', config.host + ':' + config.port);
+console.log('👤 Bot name:', config.username);
+console.log('⏰ Session: 4h 55m (GitHub Actions)');
+console.log('===========================================');
+
+function connectBot() {
+  console.log('🔗 Connecting to server...');
   
-  bot = mineflayer.createBot({
-    host: 'madlevel.minekeep.gg',
-    port: 25565,
-    username: 'AutoStartBot',
-    version: '1.21', // Match your server version
-    checkTimeoutInterval: 60 * 1000, // Longer timeout for server start
-  });
-
+  bot = mineflayer.createBot(config);
+  
   bot.on('login', () => {
-    console.log('✅ Bot logged in! Server is starting up...');
+    console.log('✅ Logged in! Server is active.');
   });
-
+  
   bot.on('spawn', () => {
-    console.log('🎉 SUCCESS! Server is now ONLINE and bot joined!');
-    console.log('🤖 Bot will keep server active 24/7');
-    connectionAttempts = 0;
-    isServerStarting = false;
+    console.log('🎉 Spawned in world!');
+    console.log('🤖 Starting anti-AFK system...');
     startAntiAFK();
   });
-
-  bot.on('end', async (reason) => {
-    console.log(`🔌 Disconnected: ${reason}`);
+  
+  bot.on('end', (reason) => {
+    console.log('🔌 Disconnected:', reason);
     stopAntiAFK();
     
-    if (reason.includes('ECONNREFUSED') || reason.includes('timed out')) {
-      console.log('🚨 Server appears offline. Attempting to AUTO-START by reconnecting...');
-      console.log('💡 Minekeep will automatically start server when connection is attempted!');
+    // Quick reconnect
+    let delay = 10000; // 10 seconds
+    
+    if (reason.includes('ECONNREFUSED')) {
+      console.log('💤 Server might be offline/sleeping');
+      delay = 30000; // 30 seconds
     }
     
-    // Keep trying - each attempt triggers auto-start
-    const delay = Math.min(30000, connectionAttempts * 10000); // 10-30 second delays
-    console.log(`🔄 Reconnecting in ${delay/1000} seconds to trigger auto-start...`);
-    setTimeout(createBot, delay);
+    console.log(`🔄 Reconnecting in ${delay/1000}s...`);
+    setTimeout(connectBot, delay);
   });
-
+  
   bot.on('error', (err) => {
-    console.log('❌ Connection error:', err.message);
-    
-    // These errors usually mean server is starting
-    if (err.code === 'ECONNREFUSED' || err.message.includes('timed out')) {
-      console.log('⏳ Server is likely starting up. Waiting...');
-    }
+    console.log('❌ Error:', err.message);
   });
-
-  // Handle auth issues
+  
   bot.on('kicked', (reason) => {
-    console.log('🚫 Bot was kicked:', reason);
+    console.log('🚫 Kicked:', reason);
   });
 }
 
 function startAntiAFK() {
-  console.log('🤖 Anti-AFK system activated!');
-  
-  if (antiAFKInterval) {
-    clearInterval(antiAFKInterval);
-  }
+  if (antiAFKInterval) clearInterval(antiAFKInterval);
   
   antiAFKInterval = setInterval(() => {
     if (!bot || !bot.entity) return;
     
-    const actions = [
-      () => { 
-        bot.setControlState('jump', true);
-        setTimeout(() => bot.setControlState('jump', false), 500);
-        console.log('🤖 Anti-AFK: Jumped');
-      },
-      () => {
-        const yaw = Math.random() * Math.PI * 2;
-        const pitch = Math.random() * Math.PI - Math.PI / 2;
-        bot.look(yaw, pitch, false);
-        console.log('🤖 Anti-AFK: Looked around');
-      },
-      () => {
-        // Simple movement
-        bot.setControlState('forward', true);
-        setTimeout(() => {
-          bot.setControlState('forward', false);
-          bot.setControlState('back', true);
-          setTimeout(() => bot.setControlState('back', false), 500);
-        }, 500);
-        console.log('🤖 Anti-AFK: Moved');
-      }
-    ];
+    // Simple anti-AFK: jump randomly
+    if (Math.random() > 0.5) {
+      bot.setControlState('jump', true);
+      setTimeout(() => bot.setControlState('jump', false), 300);
+      console.log('🤖 Anti-AFK: Jumped');
+    }
     
-    const action = actions[Math.floor(Math.random() * actions.length)];
-    action();
+    // Sometimes look around
+    if (Math.random() > 0.7) {
+      bot.look(Math.random() * Math.PI * 2, 0, false);
+      console.log('🤖 Anti-AFK: Looked around');
+    }
   }, 45000 + Math.random() * 30000); // Every 45-75 seconds
 }
 
@@ -102,11 +84,14 @@ function stopAntiAFK() {
   if (antiAFKInterval) {
     clearInterval(antiAFKInterval);
     antiAFKInterval = null;
-    console.log('🤖 Anti-AFK stopped');
   }
 }
 
-// Start the infinite loop
-console.log('🚀 Starting Minekeep Auto-Start Bot...');
-console.log('💡 Each connection attempt will trigger server auto-start!');
-createBot();
+// Start bot
+connectBot();
+
+// GitHub Actions timeout warning (after 4h 50m)
+setTimeout(() => {
+  console.log('⚠️  GitHub timeout in 5 minutes. Preparing restart...');
+  console.log('🔄 Next session will start automatically');
+}, 290 * 60 * 1000); // 4 hours 50 minutes
