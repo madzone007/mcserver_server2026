@@ -1,31 +1,37 @@
-name: Run Minecraft Bot
+name: Minecraft Keep-Alive Bot
 
 on:
-  workflow_dispatch: # Allows manual trigger
+  workflow_dispatch:
   schedule:
-    - cron: '0 */6 * * *' # Runs every 6 hours
+    - cron: '0 */5 * * *'  # Every 5 hours (safety margin)
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+    timeout-minutes: 295  # 4 hours 55 min (under 5-hour limit)
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run bot with auto-restart
-        run: |
-          while true; do
-            echo "Starting Minecraft bot..."
-            node index.js
-            echo "Bot process ended. Restarting in 10 seconds..."
-            sleep 10
-          done
-        timeout-minutes: 360 # 6 hours total
+    - name: Checkout
+      uses: actions/checkout@v3
+      
+    - name: Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Install dependencies
+      run: npm install mineflayer
+      
+    - name: Run Bot
+      run: |
+        echo "🚀 Starting Minecraft Keep-Alive Bot"
+        echo "⏰ Will run for 4 hours 55 minutes"
+        echo "📍 Server: aglaea.mcserverhost.com"
+        echo "🤖 Bot will:"
+        echo "   1. Join server immediately"
+        echo "   2. Auto-reconnect if disconnected"
+        echo "   3. Make anti-AFK movements"
+        echo "   4. Keep server active"
+        
+        # Run bot with timeout matching workflow
+        timeout 294m node index.js || echo "⏰ Time complete - next run in 5 minutes"
